@@ -1,5 +1,17 @@
 # Files and directories to exclude from pub.dev publishing.
-# These are checked into git (via .fvm) but should not be in the published package.
+# Use this file (not .gitignore) to control what gets published.
 
-# FVM (Flutter Version Management) local config
+# FVM (Flutter Version Management) - checked into git but not needed in package
+.fvm/flutter_sdk
+.fvm/fvm_config.json
 .fvm/
+
+# Build output - never needed in published package
+build/
+
+# Crash logs
+flutter_*.log
+
+# IDE
+.idea/
+.DS_Store
