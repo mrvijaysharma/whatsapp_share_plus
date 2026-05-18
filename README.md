@@ -73,8 +73,18 @@ Add the following to your ios/Runner/Info.plist:
 <array>
     <string>whatsapp</string>
     <string>whatsapp-business</string>
-</arra>
+</array>
 ```
+---
+
+## iOS Limitations
+
+> [!IMPORTANT]
+> Please read these limitations before using the plugin on iOS.
+
+- **Image + Text together is not supported**: WhatsApp on iOS does not support sharing image and text simultaneously via the URL scheme or `UIDocumentInteractionController`. Share only image OR only text.
+- **`phone` is ignored for image sharing**: When sharing an image on iOS, the `phone` parameter has no effect. To send a message to a specific contact, use `shareToWhatsapp` (text only) instead.
+- **WhatsApp Business image sharing**: On iOS, image sharing opens a system share sheet where the user can manually select WhatsApp or WhatsApp Business. The plugin cannot programmatically force the image into WhatsApp Business specifically.
 ---
 
 ## Notes

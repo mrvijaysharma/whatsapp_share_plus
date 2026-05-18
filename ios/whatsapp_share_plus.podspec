@@ -4,14 +4,16 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'whatsapp_share_plus'
-  s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin project.'
+  s.version          = '1.0.3'
+  s.summary          = 'A Flutter plugin to share text and images to WhatsApp and WhatsApp Business on Android and iOS.'
   s.description      = <<-DESC
-A new Flutter plugin project.
+A Flutter plugin that allows sharing text, images, or both directly to WhatsApp and WhatsApp Business.
+Supports targeting a specific phone number (contact) on both platforms.
+Handles Android FileProvider setup and iOS URL scheme / UIDocumentInteractionController sharing.
                        DESC
-  s.homepage         = 'http://example.com'
+  s.homepage         = 'https://github.com/mrvijaysharma/whatsapp_share_plus'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = { 'Vijay Sharma' => 'mrvijaysharma@github.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'

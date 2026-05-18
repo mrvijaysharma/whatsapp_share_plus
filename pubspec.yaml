@@ -1,12 +1,12 @@
 name: whatsapp_share_plus
-description: A Flutter plugin to share text and images (including multiple images) to WhatsApp and WhatsApp Business on Android and iOS.
-version: 0.0.1
+description: A Flutter plugin to share text and images directly to WhatsApp and WhatsApp Business on Android and iOS. Supports sharing to specific contacts via phone number.
+version: 1.0.3
 homepage: https://github.com/mrvijaysharma/whatsapp_share_plus
 repository: https://github.com/mrvijaysharma/whatsapp_share_plus
 issue_tracker: https://github.com/mrvijaysharma/whatsapp_share_plus/issues
 
 environment:
-  sdk: ^3.7.2
+  sdk: '>=3.0.0 <4.0.0'
   flutter: '>=3.3.0'
 
 dependencies:

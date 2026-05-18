@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import androidx.core.content.FileProvider
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
@@ -11,22 +13,23 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.io.IOException
 import java.lang.ref.WeakReference
+import java.util.concurrent.Executors
 
 class WhatsappSharePlusPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
   private lateinit var channel: MethodChannel
-  private lateinit var contextRef: WeakReference<Context>
+  private var contextRef: WeakReference<Context> = WeakReference(null)
 
-  private val providerAuthority: String by lazy {
-    "${getContext().packageName}.whatsapp_share_plus.fileprovider"
-  }
+  private val providerAuthority: String
+    get() = "${getContext()?.packageName}.whatsapp_share_plus.fileprovider"
 
-  private val shareCacheFolder: File
-    get() = File(getContext().cacheDir, "whatsapp_share_plus")
+  private val shareCacheFolder: File?
+    get() = getContext()?.cacheDir?.let { File(it, "whatsapp_share_plus") }
 
-  private fun getContext(): Context {
-    return contextRef.get()!!
-  }
+  private val backgroundExecutor = Executors.newSingleThreadExecutor()
+  private val mainHandler = Handler(Looper.getMainLooper())
+
+  private fun getContext(): Context? = contextRef.get()
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(binding.binaryMessenger, "whatsapp_share_plus")
@@ -36,6 +39,7 @@ class WhatsappSharePlusPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     channel.setMethodCallHandler(null)
+    contextRef = WeakReference(null)
   }
 
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -47,20 +51,37 @@ class WhatsappSharePlusPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         result.success(isPackageInstalled("com.whatsapp.w4b"))
       }
       "shareToWhatsapp" -> {
-        clearShareCacheFolder()
-        share(call, result, "com.whatsapp")
+        backgroundExecutor.execute {
+          clearShareCacheFolder()
+          share(call, result, "com.whatsapp")
+        }
       }
       "shareToWhatsappBusiness" -> {
-        clearShareCacheFolder()
-        share(call, result, "com.whatsapp.w4b")
+        backgroundExecutor.execute {
+          clearShareCacheFolder()
+          share(call, result, "com.whatsapp.w4b")
+        }
+      }
+      "shareImageToWhatsapp" -> {
+        backgroundExecutor.execute {
+          clearShareCacheFolder()
+          share(call, result, "com.whatsapp")
+        }
+      }
+      "shareImageToWhatsappBusiness" -> {
+        backgroundExecutor.execute {
+          clearShareCacheFolder()
+          share(call, result, "com.whatsapp.w4b")
+        }
       }
       else -> result.notImplemented()
     }
   }
 
   private fun isPackageInstalled(packageName: String): Boolean {
+    val context = getContext() ?: return false
     return try {
-      getContext().packageManager.getPackageInfo(packageName, 0)
+      context.packageManager.getPackageInfo(packageName, 0)
       true
     } catch (e: PackageManager.NameNotFoundException) {
       false
@@ -68,34 +89,49 @@ class WhatsappSharePlusPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
   }
 
   private fun clearShareCacheFolder() {
-    val folder = shareCacheFolder
-    if (folder.exists()) {
-      folder.listFiles()?.forEach { it.delete() }
-      folder.delete()
+    shareCacheFolder?.let { folder ->
+      if (folder.exists()) {
+        folder.listFiles()?.forEach { it.delete() }
+        folder.delete()
+      }
     }
   }
 
   @Throws(IOException::class)
   private fun copyToShareCache(file: File): File {
-    if (!shareCacheFolder.exists()) {
-      shareCacheFolder.mkdirs()
+    val cacheFolder = shareCacheFolder
+      ?: throw IOException("Cache directory unavailable")
+    if (!cacheFolder.exists()) {
+      cacheFolder.mkdirs()
     }
-    val destFile = File(shareCacheFolder, file.name)
+    val destFile = File(cacheFolder, file.name)
     file.copyTo(destFile, overwrite = true)
     return destFile
   }
 
   private fun share(call: MethodCall, result: MethodChannel.Result, packageName: String) {
+    val context = getContext()
+    if (context == null) {
+      mainHandler.post { result.error("NO_CONTEXT", "Application context is unavailable", null) }
+      return
+    }
+
     try {
       val text = call.argument<String>("text")
       val imagePath = call.argument<String>("imagePath")
       val phone = call.argument<String>("phone")
 
-      val context = getContext()
+      // Validate that at least one of text or image is provided
+      if (text.isNullOrEmpty() && imagePath.isNullOrEmpty()) {
+        mainHandler.post {
+          result.error("INVALID_ARGUMENT", "Either text or imagePath must be provided", null)
+        }
+        return
+      }
 
       val intent = Intent().apply {
         action = Intent.ACTION_SEND
-        type = if (imagePath != null) "image/*" else "text/plain"
+        type = if (!imagePath.isNullOrEmpty()) "image/*" else "text/plain"
         setPackage(packageName)
 
         text?.let { putExtra(Intent.EXTRA_TEXT, it) }
@@ -106,6 +142,12 @@ class WhatsappSharePlusPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         if (!imagePath.isNullOrEmpty()) {
           val originalFile = File(imagePath)
+          if (!originalFile.exists()) {
+            mainHandler.post {
+              result.error("FILE_NOT_FOUND", "Image file not found at path: $imagePath", null)
+            }
+            return@apply
+          }
           val cachedFile = copyToShareCache(originalFile)
           val uri: Uri = FileProvider.getUriForFile(context, providerAuthority, cachedFile)
           putExtra(Intent.EXTRA_STREAM, uri)
@@ -115,10 +157,16 @@ class WhatsappSharePlusPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
       }
 
+      // Only start activity if intent was fully built (no early return above)
+      if (!imagePath.isNullOrEmpty() && !intent.hasExtra(Intent.EXTRA_STREAM)) {
+        // Early return was triggered inside apply block — do nothing, result already sent
+        return
+      }
+
       context.startActivity(intent)
-      result.success(true)
+      mainHandler.post { result.success(true) }
     } catch (e: Exception) {
-      result.error("WHATSAPP_SHARE_ERROR", e.message, null)
+      mainHandler.post { result.error("WHATSAPP_SHARE_ERROR", e.message, null) }
     }
   }
 }

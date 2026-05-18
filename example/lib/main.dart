@@ -120,7 +120,7 @@ class _HomePageState extends State<HomePage> {
         _showSnackBar("Sharing failed or cancelled.");
       }
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
       _showSnackBar("Error while sharing: $e");
     }
   }

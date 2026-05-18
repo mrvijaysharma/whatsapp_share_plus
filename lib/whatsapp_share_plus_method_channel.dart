@@ -47,7 +47,7 @@ class MethodChannelWhatsappSharePlus extends WhatsappSharePlusPlatform {
     String? text,
     String? phone,
   }) async {
-    final bool? result = await _channel.invokeMethod('shareToWhatsapp', {
+    final bool? result = await _channel.invokeMethod('shareImageToWhatsapp', {
       'imagePath': imagePath,
       if (text != null) 'text': text,
       if (phone != null) 'phone': phone,
@@ -61,7 +61,7 @@ class MethodChannelWhatsappSharePlus extends WhatsappSharePlusPlatform {
     String? text,
     String? phone,
   }) async {
-    final bool? result = await _channel.invokeMethod('shareToWhatsappBusiness', {
+    final bool? result = await _channel.invokeMethod('shareImageToWhatsappBusiness', {
       'imagePath': imagePath,
       if (text != null) 'text': text,
       if (phone != null) 'phone': phone,

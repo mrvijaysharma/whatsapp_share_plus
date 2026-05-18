@@ -16,9 +16,9 @@ public class WhatsappSharePlusPlugin: NSObject, FlutterPlugin {
             result(isAppInstalled(scheme: "whatsapp-business://"))
 
         case "shareToWhatsapp":
-            shareToWhatsapp(call.arguments, isBusiness: false, result: result)
+            shareTextToWhatsapp(call.arguments, isBusiness: false, result: result)
         case "shareToWhatsappBusiness":
-            shareToWhatsapp(call.arguments, isBusiness: true, result: result)
+            shareTextToWhatsapp(call.arguments, isBusiness: true, result: result)
 
         case "shareImageToWhatsapp":
             shareImageToWhatsapp(call.arguments, isBusiness: false, result: result)
@@ -35,26 +35,24 @@ public class WhatsappSharePlusPlugin: NSObject, FlutterPlugin {
         return UIApplication.shared.canOpenURL(url)
     }
 
-    private func shareToWhatsapp(_ arguments: Any?, isBusiness: Bool, result: @escaping FlutterResult) {
+    // MARK: - Text Sharing
+
+    private func shareTextToWhatsapp(_ arguments: Any?, isBusiness: Bool, result: @escaping FlutterResult) {
         guard let args = arguments as? [String: Any], let text = args["text"] as? String else {
-            result(FlutterError(code: "INVALID_ARGUMENT", message: "Text missing", details: nil))
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "Text is required for text sharing", details: nil))
             return
         }
 
         let phone = args["phone"] as? String
+        let scheme = isBusiness ? "whatsapp-business" : "whatsapp"
         var urlString: String
 
         if let phone = phone, !phone.isEmpty {
-            // WhatsApp URL scheme for sending message to phone (no + sign)
-            urlString = "whatsapp://send?phone=\(phone)&text=\(text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-            if isBusiness {
-                urlString = "whatsapp-business://send?phone=\(phone)&text=\(text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-            }
+            let encodedText = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+            urlString = "\(scheme)://send?phone=\(phone)&text=\(encodedText)"
         } else {
-            urlString = "whatsapp://send?text=\(text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-            if isBusiness {
-                urlString = "whatsapp-business://send?text=\(text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-            }
+            let encodedText = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+            urlString = "\(scheme)://send?text=\(encodedText)"
         }
 
         guard let whatsappURL = URL(string: urlString) else {
@@ -67,45 +65,73 @@ public class WhatsappSharePlusPlugin: NSObject, FlutterPlugin {
                 result(success)
             }
         } else {
-            result(false)
+            let appName = isBusiness ? "WhatsApp Business" : "WhatsApp"
+            result(FlutterError(code: "APP_NOT_INSTALLED", message: "\(appName) is not installed", details: nil))
         }
     }
 
+    // MARK: - Image Sharing
+
     private func shareImageToWhatsapp(_ arguments: Any?, isBusiness: Bool, result: @escaping FlutterResult) {
         guard let args = arguments as? [String: Any], let imagePath = args["imagePath"] as? String else {
-            result(FlutterError(code: "INVALID_ARGUMENT", message: "Image path missing", details: nil))
+            result(FlutterError(code: "INVALID_ARGUMENT", message: "imagePath is required for image sharing", details: nil))
             return
         }
 
-        let text = args["text"] as? String
-        // phone is not used for image sharing via UIDocumentInteractionController
+        // Validate file exists
+        guard FileManager.default.fileExists(atPath: imagePath) else {
+            result(FlutterError(code: "FILE_NOT_FOUND", message: "Image file not found at path: \(imagePath)", details: nil))
+            return
+        }
+
+        // Note: phone is not supported for image sharing on iOS via UIDocumentInteractionController.
+        // Note: WhatsApp Business image sharing uses the same share sheet as WhatsApp on iOS;
+        //       the isBusiness flag uses the 'net.whatsapp.image' UTI which opens WhatsApp.
+        //       Apple's UIDocumentInteractionController does not allow targeting a specific app reliably.
+        if let phone = args["phone"] as? String, !phone.isEmpty {
+            // Warn via debugPrint — cannot direct image to a specific contact on iOS
+            debugPrint("[WhatsappSharePlus] Warning: 'phone' parameter is not supported for image sharing on iOS and will be ignored.")
+        }
 
         let fileURL = URL(fileURLWithPath: imagePath)
-        if !FileManager.default.fileExists(atPath: imagePath) {
-            result(FlutterError(code: "FILE_NOT_FOUND", message: "Image file not found", details: nil))
-            return
-        }
-
         let docController = UIDocumentInteractionController(url: fileURL)
+        // Use the standard WhatsApp UTI. WhatsApp Business will also appear in the share sheet.
         docController.uti = "net.whatsapp.image"
 
-        // WhatsApp Business doesn't have separate UTI or way to force it here on iOS, so just ignoring isBusiness
-
         DispatchQueue.main.async {
-            if let rootVC = UIApplication.topViewController() {
-                docController.presentOpenInMenu(from: rootVC.view.frame, in: rootVC.view, animated: true)
+            guard let rootVC = UIApplication.topViewController() else {
+                result(FlutterError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Cannot find root view controller", details: nil))
+                return
+            }
+            // presentOpenInMenu shows all apps that handle this UTI
+            let presented = docController.presentOpenInMenu(
+                from: rootVC.view.bounds,
+                in: rootVC.view,
+                animated: true
+            )
+            if presented {
                 result(true)
             } else {
-                result(FlutterError(code: "NO_ROOT_VIEW_CONTROLLER", message: "Cannot find root view controller", details: nil))
+                result(FlutterError(code: "SHARE_FAILED", message: "Could not present share sheet. Ensure WhatsApp is installed.", details: nil))
             }
         }
     }
 }
 
+// MARK: - UIApplication Extension
+
 extension UIApplication {
-    class func topViewController(controller: UIViewController? = UIApplication.shared.connectedScenes
-                                    .compactMap { ($0 as? UIWindowScene)?.keyWindow }
-                                    .first?.rootViewController) -> UIViewController? {
+    class func topViewController(controller: UIViewController? = {
+        if #available(iOS 13.0, *) {
+            return UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first { $0.isKeyWindow }?.rootViewController
+        } else {
+            return UIApplication.shared.keyWindow?.rootViewController
+        }
+    }()) -> UIViewController? {
+
         if let navigationController = controller as? UINavigationController {
             return topViewController(controller: navigationController.visibleViewController)
         }
