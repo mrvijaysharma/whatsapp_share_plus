@@ -1,23 +1,35 @@
 name: whatsapp_share_plus
-description: A Flutter plugin to share text and images directly to WhatsApp and WhatsApp Business on Android and iOS. Supports sharing to specific contacts via phone number.
-version: 1.0.3
+description: Share text, images, video and documents to WhatsApp and WhatsApp Business. Target a contact by phone number, send multiple files, and install sticker packs.
+version: 2.0.0
 homepage: https://github.com/mrvijaysharma/whatsapp_share_plus
 repository: https://github.com/mrvijaysharma/whatsapp_share_plus
 issue_tracker: https://github.com/mrvijaysharma/whatsapp_share_plus/issues
+documentation: https://github.com/mrvijaysharma/whatsapp_share_plus#readme
+
+topics:
+  - whatsapp
+  - share
+  - sharing
+  - deep-links
+  - stickers
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
-  flutter: '>=3.3.0'
+  sdk: '>=3.4.0 <4.0.0'
+  flutter: '>=3.22.0'
 
 dependencies:
+  cross_file: ^0.3.4
   flutter:
     sdk: flutter
-  plugin_platform_interface: ^2.0.2
+  flutter_web_plugins:
+    sdk: flutter
+  plugin_platform_interface: ^2.1.8
+  web: ^1.1.0
 
 dev_dependencies:
+  flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
 
 flutter:
   plugin:
@@ -27,3 +39,12 @@ flutter:
         pluginClass: WhatsappSharePlusPlugin
       ios:
         pluginClass: WhatsappSharePlusPlugin
+      macos:
+        pluginClass: WhatsappSharePlusPlugin
+      linux:
+        pluginClass: WhatsappSharePlusPlugin
+      windows:
+        pluginClass: WhatsappSharePlusPluginCApi
+      web:
+        pluginClass: WhatsappSharePlusWeb
+        fileName: whatsapp_share_plus_web.dart

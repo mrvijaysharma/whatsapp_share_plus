@@ -2,14 +2,14 @@ group = "com.vijay_sharma.whatsapp_share_plus"
 version = "1.0-SNAPSHOT"
 
 buildscript {
-    ext.kotlin_version = "1.8.22"
+    ext.kotlin_version = "2.2.20"
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath("com.android.tools.build:gradle:8.7.0")
+        classpath("com.android.tools.build:gradle:8.11.1")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
     }
 }
@@ -44,12 +44,20 @@ android {
     }
 
     defaultConfig {
+        // Android 5.0. WhatsApp itself requires a higher version than this, so
+        // the floor is set by what the plugin can compile against rather than
+        // by what can realistically run it.
         minSdk = 21
     }
 
     dependencies {
-        testImplementation("org.jetbrains.kotlin:kotlin-test")
-        testImplementation("org.mockito:mockito-core:5.0.0")
+        // kotlin-test-junit5 (rather than plain kotlin-test) so that the
+        // `kotlin.test.Test` annotation maps onto the JUnit Platform runner
+        // configured below. With the default JUnit 4 flavour the tests compile
+        // but are silently never executed.
+        testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     }
 
     testOptions {
@@ -57,9 +65,9 @@ android {
             useJUnitPlatform()
 
             testLogging {
-               events "passed", "skipped", "failed", "standardOut", "standardError"
-               outputs.upToDateWhen {false}
-               showStandardStreams = true
+                events "passed", "skipped", "failed", "standardOut", "standardError"
+                outputs.upToDateWhen { false }
+                showStandardStreams = true
             }
         }
     }

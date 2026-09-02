@@ -1,61 +1,30 @@
-import 'whatsapp_share_plus_platform_interface.dart';
+/// Share text, images, video, and documents to WhatsApp and WhatsApp Business.
+///
+/// The entry point is [WhatsAppShare]:
+///
+/// ```dart
+/// import 'package:whatsapp_share_plus/whatsapp_share_plus.dart';
+///
+/// await WhatsAppShare.share(
+///   text: 'Look at this',
+///   files: [ShareFile.fromPath(photo.path)],
+///   phone: '+91 98765 43210',
+/// );
+/// ```
+///
+/// For links that work anywhere — QR codes, emails, web pages — use
+/// [WhatsAppLink], which is pure Dart and needs no plugin registration.
+library;
 
-class WhatsappSharePlus {
-  /// Check if WhatsApp is installed
-  static Future<bool> isWhatsappInstalled() {
-    return WhatsappSharePlusPlatform.instance.isWhatsappInstalled();
-  }
-
-  /// Check if WhatsApp Business is installed
-  static Future<bool> isWhatsappBusinessInstalled() {
-    return WhatsappSharePlusPlatform.instance.isWhatsappBusinessInstalled();
-  }
-
-  /// Share text message to WhatsApp
-  static Future<bool?> shareToWhatsapp({
-    required String text,
-    String? phone,
-  }) {
-    return WhatsappSharePlusPlatform.instance.shareToWhatsapp(
-      text: text,
-      phone: phone,
-    );
-  }
-
-  /// Share text message to WhatsApp Business
-  static Future<bool?> shareToWhatsappBusiness({
-    required String text,
-    String? phone,
-  }) {
-    return WhatsappSharePlusPlatform.instance.shareToWhatsappBusiness(
-      text: text,
-      phone: phone,
-    );
-  }
-
-  /// Share image with optional text and phone to WhatsApp
-  static Future<bool?> shareImageToWhatsapp({
-    required String imagePath,
-    String? text,
-    String? phone,
-  }) {
-    return WhatsappSharePlusPlatform.instance.shareImageToWhatsapp(
-      imagePath: imagePath,
-      text: text,
-      phone: phone,
-    );
-  }
-
-  /// Share image with optional text and phone to WhatsApp Business
-  static Future<bool?> shareImageToWhatsappBusiness({
-    required String imagePath,
-    String? text,
-    String? phone,
-  }) {
-    return WhatsappSharePlusPlatform.instance.shareImageToWhatsappBusiness(
-      imagePath: imagePath,
-      text: text,
-      phone: phone,
-    );
-  }
-}
+export 'src/legacy/whatsapp_share_plus_legacy.dart';
+export 'src/links/phone_number.dart';
+export 'src/links/whatsapp_link.dart';
+export 'src/models/diagnostics.dart';
+export 'src/models/exceptions.dart';
+export 'src/models/image_header.dart' show ImageHeader, parseImageHeader;
+export 'src/models/share_file.dart' show ShareFile, lookupMimeType;
+export 'src/models/share_request.dart';
+export 'src/models/share_result.dart';
+export 'src/models/sticker_pack.dart';
+export 'src/models/whatsapp_target.dart';
+export 'src/whatsapp_share.dart';

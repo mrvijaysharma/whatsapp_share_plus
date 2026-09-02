@@ -1,4 +1,38 @@
+# Analysis options for the whatsapp_share_plus package.
+#
+# Stricter than the Flutter default in two places that matter for a published
+# package: every public member must be documented (pub.dev scores this), and
+# the analyzer treats missing return types and unawaited futures as errors
+# rather than hints.
+
 include: package:flutter_lints/flutter.yaml
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+analyzer:
+  exclude:
+    - build/**
+    - example/build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+  errors:
+    # A missing doc comment on a public member costs pub.dev points, so it
+    # should fail the build rather than accumulate quietly.
+    public_member_api_docs: warning
+    unawaited_futures: error
+    always_declare_return_types: error
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_print
+    - cancel_subscriptions
+    - close_sinks
+    - directives_ordering
+    - prefer_single_quotes
+    - public_member_api_docs
+    - sort_pub_dependencies
+    - unawaited_futures
+    - use_super_parameters

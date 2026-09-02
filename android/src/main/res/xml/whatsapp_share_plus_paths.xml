@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The only directory this plugin's FileProvider will serve. Shares are staged
+    into per-share subdirectories underneath it, so nothing outside the app's
+    own cache is ever exposed.
+-->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path
+        name="whatsapp_share_plus_cache"
+        path="whatsapp_share_plus/" />
+</paths>

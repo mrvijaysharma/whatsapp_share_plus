@@ -1,0 +1,24 @@
+name: Publish to pub.dev
+
+# Publishes on a version tag using pub.dev's OIDC support, so no long-lived
+# credential is stored in the repository. Configure the automated publishing
+# permission on pub.dev first: https://dart.dev/tools/pub/automated-publishing
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+
+jobs:
+  publish:
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - run: dart pub publish --force

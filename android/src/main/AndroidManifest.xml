@@ -1,12 +1,27 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.vijay_sharma.whatsapp_share_plus">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+        Android 11 (API 30) and above hide installed packages from apps that do
+        not declare an interest in them. Without these entries every install
+        check reports false, even when WhatsApp is present.
+    -->
     <queries>
         <package android:name="com.whatsapp" />
         <package android:name="com.whatsapp.w4b" />
+
+        <!-- Lets the wa.me fallback find a browser when WhatsApp is absent. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
     </queries>
 
     <application>
+
+        <!--
+            Serves shared files to WhatsApp as content:// URIs, so no file is
+            ever handed over by raw path and no storage permission is needed.
+        -->
         <provider
             android:name="com.vijay_sharma.whatsapp_share_plus.WhatsappSharePlusProvider"
             android:authorities="${applicationId}.whatsapp_share_plus.fileprovider"
@@ -14,8 +29,21 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths" />
+                android:resource="@xml/whatsapp_share_plus_paths" />
         </provider>
+
+        <!--
+            Serves sticker packs to WhatsApp. This one must be exported, because
+            WhatsApp reads it from its own process. It is guarded by WhatsApp's
+            own permission, so only WhatsApp can query it.
+        -->
+        <provider
+            android:name="com.vijay_sharma.whatsapp_share_plus.StickerContentProvider"
+            android:authorities="${applicationId}.whatsapp_share_plus.stickercontentprovider"
+            android:enabled="true"
+            android:exported="true"
+            android:readPermission="com.whatsapp.sticker.READ" />
+
     </application>
 
 </manifest>

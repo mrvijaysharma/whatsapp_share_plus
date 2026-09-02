@@ -4,28 +4,25 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'whatsapp_share_plus'
-  s.version          = '1.0.3'
-  s.summary          = 'A Flutter plugin to share text and images to WhatsApp and WhatsApp Business on Android and iOS.'
+  s.version          = '2.0.0'
+  s.summary          = 'Share text, media, and documents to WhatsApp and WhatsApp Business.'
   s.description      = <<-DESC
-A Flutter plugin that allows sharing text, images, or both directly to WhatsApp and WhatsApp Business.
-Supports targeting a specific phone number (contact) on both platforms.
-Handles Android FileProvider setup and iOS URL scheme / UIDocumentInteractionController sharing.
+Share text, images, video, audio, and documents to WhatsApp and WhatsApp Business.
+Targets a contact by phone number, sends several files at once, installs sticker
+packs, and builds wa.me links that work on every platform.
                        DESC
   s.homepage         = 'https://github.com/mrvijaysharma/whatsapp_share_plus'
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Vijay Sharma' => 'mrvijaysharma@github.com' }
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
+  s.source_files = 'whatsapp_share_plus/Sources/whatsapp_share_plus/**/*.swift'
   s.dependency 'Flutter'
   s.platform = :ios, '12.0'
 
-  # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
   s.swift_version = '5.0'
 
-  # If your plugin requires a privacy manifest, for example if it uses any
-  # required reason APIs, update the PrivacyInfo.xcprivacy file to describe your
-  # plugin's privacy impact, and then uncomment this line. For more information,
-  # see https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
-  # s.resource_bundles = {'whatsapp_share_plus_privacy' => ['Resources/PrivacyInfo.xcprivacy']}
+  s.resource_bundles = {
+    'whatsapp_share_plus_privacy' => ['whatsapp_share_plus/Sources/whatsapp_share_plus/PrivacyInfo.xcprivacy'],
+  }
 end
