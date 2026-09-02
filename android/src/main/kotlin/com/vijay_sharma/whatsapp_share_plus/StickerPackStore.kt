@@ -70,7 +70,7 @@ internal object StickerPackStore {
             directory = directory,
             image = pack["trayImage"] as? Map<*, *>
                 ?: throw IOException("A sticker pack requires a tray image."),
-            fallbackName = "tray.webp",
+            fileName = "tray.webp",
         )
 
         val rawStickers = pack["stickers"] as? List<*> ?: emptyList<Any>()
@@ -136,18 +136,27 @@ internal object StickerPackStore {
         return if (file.canonicalPath.startsWith(canonicalRoot)) file else null
     }
 
+    /**
+     * Writes one sticker image under a name this class chooses.
+     *
+     * The caller's own file name is deliberately ignored. Sticker file names
+     * are never shown to anyone — WhatsApp addresses them through the content
+     * provider — but they must be unique within a pack, and two stickers built
+     * from `heart.webp` in different folders would otherwise collide, silently
+     * overwriting one image and emitting a duplicate `sticker_file_name` that
+     * makes WhatsApp reject the whole pack.
+     */
     private fun writeImage(
         directory: File,
         image: Map<*, *>,
-        fallbackName: String,
+        fileName: String,
     ): String {
-        val name = sanitize((image["name"] as? String)?.takeIf { it.isNotBlank() } ?: fallbackName)
-        val destination = File(directory, name)
+        val destination = File(directory, fileName)
 
         val bytes = image["bytes"] as? ByteArray
         if (bytes != null) {
             destination.writeBytes(bytes)
-            return name
+            return fileName
         }
 
         val path = image["path"] as? String
@@ -155,7 +164,7 @@ internal object StickerPackStore {
         val source = File(path)
         if (!source.isFile) throw FileNotFoundInShareException(path)
         source.copyTo(destination, overwrite = true)
-        return name
+        return fileName
     }
 
     private fun sanitize(value: String): String =

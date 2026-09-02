@@ -502,11 +502,20 @@ extension UIApplication {
         return controller
     }
 
+    /// The root view controller of the key window.
+    ///
+    /// The scene-based lookup is iOS 13 and later. This package declares a
+    /// deployment target of iOS 12 so that it never forces a host app to raise
+    /// its own target, which means the scene API has to sit behind an
+    /// availability check rather than being used unguarded.
     private static var keyRootViewController: UIViewController? {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first { $0.isKeyWindow }?
-            .rootViewController
+        if #available(iOS 13.0, *) {
+            return UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap(\.windows)
+                .first { $0.isKeyWindow }?
+                .rootViewController
+        }
+        return UIApplication.shared.keyWindow?.rootViewController
     }
 }

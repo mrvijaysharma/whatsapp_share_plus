@@ -67,7 +67,17 @@ enum ShareStager {
                 fileName = (fileName as NSString).deletingPathExtension + "." + ext
             }
 
-            let destination = session.appendingPathComponent(fileName)
+            // Each attachment gets its own numbered slot inside the session.
+            // Two camera-roll picks routinely share a basename, and staging
+            // both directly into the session directory would hand the share
+            // sheet the same URL twice — sending one file twice and silently
+            // dropping the other. Slotting keeps the visible name intact.
+            let slot = session.appendingPathComponent(String(index), isDirectory: true)
+            try FileManager.default.createDirectory(
+                at: slot,
+                withIntermediateDirectories: true
+            )
+            let destination = slot.appendingPathComponent(fileName)
 
             if let data = raw["bytes"] as? FlutterStandardTypedData {
                 try data.data.write(to: destination)
@@ -76,9 +86,6 @@ enum ShareStager {
             } else if let path = raw["path"] as? String {
                 guard FileManager.default.fileExists(atPath: path) else {
                     throw ShareStagerError.fileNotFound(path)
-                }
-                if FileManager.default.fileExists(atPath: destination.path) {
-                    try FileManager.default.removeItem(at: destination)
                 }
                 try FileManager.default.copyItem(
                     at: URL(fileURLWithPath: path),

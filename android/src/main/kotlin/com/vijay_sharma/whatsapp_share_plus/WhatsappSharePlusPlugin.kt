@@ -68,11 +68,39 @@ class WhatsappSharePlusPlugin :
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) =
         onAttachedToActivity(binding)
 
-    override fun onDetachedFromActivityForConfigChanges() = onDetachedFromActivity()
+    /**
+     * A rotation or similar configuration change detaches the activity only
+     * momentarily; [onReattachedToActivityForConfigChanges] re-registers the
+     * result listener straight afterwards, so a sticker install still in flight
+     * will get its answer and must be left alone.
+     */
+    override fun onDetachedFromActivityForConfigChanges() {
+        detachFromActivity(activityIsGoneForGood = false)
+    }
 
     override fun onDetachedFromActivity() {
+        detachFromActivity(activityIsGoneForGood = true)
+    }
+
+    private fun detachFromActivity(activityIsGoneForGood: Boolean) {
         activityBinding?.removeActivityResultListener(this)
         activityBinding = null
+
+        if (!activityIsGoneForGood) return
+
+        // With the activity gone, onActivityResult can never arrive. Answering
+        // the pending call here is the difference between the caller's `await`
+        // completing and hanging for the rest of the process's life.
+        val pending = pendingStickerResult ?: return
+        pendingStickerResult = null
+        mainHandler.post {
+            pending.error(
+                "STICKER_PACK_ERROR",
+                "The host activity was destroyed before WhatsApp reported whether " +
+                    "the sticker pack was added.",
+                null,
+            )
+        }
     }
 
     // endregion

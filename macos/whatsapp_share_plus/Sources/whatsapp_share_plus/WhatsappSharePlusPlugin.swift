@@ -161,7 +161,7 @@ public class WhatsappSharePlusPlugin: NSObject, FlutterPlugin {
         result: @escaping FlutterResult
     ) {
         DispatchQueue.main.async {
-            guard let view = self.hostView, let window = view.window else {
+            guard let view = self.anchorView, let window = view.window else {
                 result(
                     FlutterError(
                         code: "NO_ROOT_VIEW_CONTROLLER",
@@ -189,6 +189,19 @@ public class WhatsappSharePlusPlugin: NSObject, FlutterPlugin {
         }
     }
 
+    /// The view the share picker is anchored to.
+    ///
+    /// `hostView` is captured once at registration and held weakly, so by the
+    /// time a share happens it may be nil — the window can have been recreated,
+    /// and in a multi-window app the registrar's view may not be the one on
+    /// screen. Falling back to whatever window is currently frontmost keeps
+    /// file sharing working instead of failing with NO_ROOT_VIEW_CONTROLLER.
+    private var anchorView: NSView? {
+        if let hostView, hostView.window != nil { return hostView }
+        return NSApplication.shared.keyWindow?.contentView
+            ?? NSApplication.shared.mainWindow?.contentView
+    }
+
     /// Copies files into a temporary directory so the picker reads from a
     /// stable location the app controls.
     private func stage(_ files: [[String: Any]]) throws -> [URL] {
@@ -200,8 +213,23 @@ public class WhatsappSharePlusPlugin: NSObject, FlutterPlugin {
         return try files.enumerated().map { index, raw in
             let name = (raw["name"] as? String).flatMap { $0.isEmpty ? nil : $0 }
                 ?? "attachment_\(index)"
-            let destination = session.appendingPathComponent(
-                name.replacingOccurrences(of: "/", with: "_")
+
+            // Each attachment gets its own numbered slot. Without it, two
+            // files sharing a basename make copyItem throw NSFileWriteFileExists
+            // and fail the whole share — a harsher symptom than the other
+            // platforms show for the same input, which is exactly why it has
+            // to be fixed the same way everywhere.
+            let slot = session.appendingPathComponent("\(index)", isDirectory: true)
+            try FileManager.default.createDirectory(
+                at: slot,
+                withIntermediateDirectories: true
+            )
+            let safeName = name
+                .replacingOccurrences(of: "/", with: "_")
+                .replacingOccurrences(of: "\\", with: "_")
+                .replacingOccurrences(of: "..", with: "_")
+            let destination = slot.appendingPathComponent(
+                safeName.isEmpty ? "attachment_\(index)" : safeName
             )
 
             if let typed = raw["bytes"] as? FlutterStandardTypedData {

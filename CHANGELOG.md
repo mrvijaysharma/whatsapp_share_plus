@@ -83,9 +83,11 @@ method still works, deprecated, until 3.0.0. See [MIGRATION.md](MIGRATION.md).
   `plugin_platform_interface` moved to `^2.1.8`.
 - **Android build toolchain.** The plugin's buildscript now declares Android
   Gradle Plugin 8.11.1 and Kotlin 2.2.20, which are the minimums Flutter 3.47
-  enforces. `minSdk` stays at 21 and `compileSdk` at 35, so the range of
-  devices supported is unchanged. Apps on an older Gradle or AGP will need to
-  upgrade alongside Flutter.
+  enforces, and depends on `androidx.core:core` explicitly rather than relying
+  on the Flutter embedding to supply `FileProvider` transitively. `minSdk`
+  stays at 21 and `compileSdk` at 35, so the range of devices supported is
+  unchanged. Apps on an older Gradle or AGP will need to upgrade alongside
+  Flutter.
 
 ### Fixed
 

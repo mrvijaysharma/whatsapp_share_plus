@@ -51,6 +51,14 @@ android {
     }
 
     dependencies {
+        // FileProvider comes from androidx-core. The Flutter embedding happens
+        // to put it on the classpath today, so this compiles without being
+        // declared — but relying on a transitive dependency means a host app
+        // that excludes or shades androidx-core breaks file sharing. Declared
+        // explicitly so the plugin owns what it uses. Gradle resolves to the
+        // highest requested version, so this does not hold an app back.
+        implementation("androidx.core:core:1.13.1")
+
         // kotlin-test-junit5 (rather than plain kotlin-test) so that the
         // `kotlin.test.Test` annotation maps onto the JUnit Platform runner
         // configured below. With the default JUnit 4 flavour the tests compile
