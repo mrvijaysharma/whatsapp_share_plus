@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [2.0.0] - 2026-08-23
+## [2.0.0] - 2026-09-10
 
 A rewrite around a single `share()` call. **No existing code breaks**: every 1.x
 method still works, deprecated, until 3.0.0. See [MIGRATION.md](MIGRATION.md).
@@ -110,6 +110,23 @@ method still works, deprecated, until 3.0.0. See [MIGRATION.md](MIGRATION.md).
   be deallocated before the user saw it. It is now retained until dismissal.
 - **Android manifest declared a `package` attribute**, which Android Gradle
   Plugin 8 rejects.
+- **Attachments sharing a filename could overwrite one another.** Two files
+  named `image.jpg` in the same share landed in the same staging path on
+  Android, iOS, and macOS, so only one survived to reach WhatsApp. Each
+  attachment now stages into its own slot directory, keyed by position rather
+  than name.
+- **Android: a sticker pack add pending when the host activity was destroyed**
+  (not merely backgrounded — a configuration change like rotation is
+  unaffected) never resolved its Dart `Future`, leaking the call. It now
+  completes with a `StickerPackException` when the activity is gone for good.
+- **macOS: the sharing-picker anchor could go stale.** The window backing a
+  held `NSView` reference can close between calls; the picker now falls back
+  to the app's current key or main window rather than presenting from (or
+  crashing on) a dead reference.
+- **Android: `FileProvider` depended on a transitive `androidx.core`**
+  version supplied by the Flutter embedding. It is now an explicit
+  `androidx.core:core` dependency, so the plugin does not break if that
+  transitive dependency ever changes.
 
 ## [1.0.3] - 2025-05-19
 
