@@ -9,13 +9,24 @@
 # Build output - never needed in published package
 build/
 
-# Crash logs
-flutter_*.log
-
 # Maintainer notes - pub reads the files on disk, so these ship even untracked
 CLAUDE.md
 HANDOFF.md
 
 # IDE
 .idea/
+*.iml
+*.ipr
+*.iws
 .DS_Store
+
+# Generated API docs
+doc/api/
+
+# Other local artifacts. A root .pubignore replaces the root .gitignore for
+# publishing, so these patterns have to be repeated here.
+*.log
+*.class
+*.swp
+.swiftpm/
+migrate_working_dir/
