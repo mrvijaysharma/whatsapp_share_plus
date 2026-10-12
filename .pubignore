@@ -12,6 +12,10 @@ build/
 # Crash logs
 flutter_*.log
 
+# Maintainer notes - pub reads the files on disk, so these ship even untracked
+CLAUDE.md
+HANDOFF.md
+
 # IDE
 .idea/
 .DS_Store
