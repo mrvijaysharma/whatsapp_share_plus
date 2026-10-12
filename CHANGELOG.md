@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- **iOS sticker packs reached WhatsApp in a format it could not read.** The
+  pasteboard payload was handed over as a dictionary, which iOS stores as a
+  property list; WhatsApp expects JSON. The pack is now serialised with
+  `JSONSerialization` before it is written.
+- **iOS reported animated packs under the wrong key** (`is_animated_sticker_pack`
+  instead of `animated_sticker_pack`), so WhatsApp treated every animated pack
+  as static.
+
 ## [2.0.0] - 2026-09-10
 
 A rewrite around a single `share()` call. **No existing code breaks**: every 1.x

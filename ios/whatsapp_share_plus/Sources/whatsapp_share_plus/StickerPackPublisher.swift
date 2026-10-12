@@ -31,9 +31,12 @@ enum StickerPackPublisher {
             return
         }
 
-        let payload: [String: Any]
+        // WhatsApp reads the pasteboard item as JSON data. Handing setItems a
+        // dictionary would store a property list instead, which its reader
+        // cannot parse, so serialize before writing.
+        let payload: Data
         do {
-            payload = try buildPayload(from: pack)
+            payload = try JSONSerialization.data(withJSONObject: buildPayload(from: pack))
         } catch let error as StickerPackError {
             completion(.failure(error))
             return
@@ -90,7 +93,9 @@ enum StickerPackPublisher {
             "publisher": pack["publisher"] as? String ?? "",
             "tray_image": try base64(of: trayImage).base64EncodedString(),
             "stickers": stickers,
-            "is_animated_sticker_pack": pack["animated"] as? Bool ?? false,
+            // Same key WhatsApp's samples use, and the one the Android content
+            // provider already reports.
+            "animated_sticker_pack": pack["animated"] as? Bool ?? false,
         ]
 
         // Optional metadata: only included when the caller supplied it, since
